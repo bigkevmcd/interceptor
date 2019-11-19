@@ -18,17 +18,18 @@ const (
 
 // MatchPullRequestAction will match on pull-request requests if the action
 // matches the action provided in the pullRequestActionHeader.
-func MatchPullRequestAction(r *http.Request) (bool, error) {
+func MatchPullRequestAction(r *http.Request, body []byte) (bool, error) {
 	if !isPullRequestEvent(r) {
 		log.Println("debug: dropping request because not a pull request event")
 		return false, nil
 	}
 
-	key, err := hookKey(r)
+	key, err := hookKey(r, body)
 	if err != nil {
 		return false, fmt.Errorf("failed to create key: %w", err)
 	}
 
+	log.Printf("debug: hookKey = %s, requestKey = %s", key, requestKey(r))
 	return requestKey(r) == key, nil
 }
 
@@ -36,11 +37,10 @@ func isPullRequestEvent(r *http.Request) bool {
 	return r.Header.Get(gitHubEventHeader) == pullRequestEventType
 }
 
-func hookKey(r *http.Request) (string, error) {
+func hookKey(r *http.Request, body []byte) (string, error) {
 	et := r.Header.Get(gitHubEventHeader)
-	dec := json.NewDecoder(r.Body)
 	var event github.PullRequestEvent
-	err := dec.Decode(&event)
+	err := json.Unmarshal(body, &event)
 	if err != nil {
 		return "", fmt.Errorf("failed to unmarshal request body: %w", err)
 	}

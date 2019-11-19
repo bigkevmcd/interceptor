@@ -16,17 +16,7 @@ var (
 func main() {
 	flag.Parse()
 
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		match, err := pullrequest.MatchPullRequestAction(r)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		if !match {
-			fmt.Printf("pull-request match: %v\n", match)
-		}
-	})
-
+	http.HandleFunc("/", pullrequest.InterceptionHandler)
 	addr := fmt.Sprintf(":%d", *port)
 	log.Printf("Listening on %s\n", addr)
 	log.Fatal(http.ListenAndServe(addr, nil))
