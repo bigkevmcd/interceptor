@@ -9,7 +9,7 @@ import (
 // body matches the requested fields.
 //
 // It recognises the following request headers:
-//    X-GitHub-Event - this is provided by GitHub in its HookMechanism
+//    X-GitHub-Event - this is provided by GitHub in its hook-mechanism
 //    Pullrequest-Action - this is configured on the trigger interceptor
 //    Pullrequest-Repo - this is the full name of the GitHub repo e.g.
 //    tektoncd/triggers.
