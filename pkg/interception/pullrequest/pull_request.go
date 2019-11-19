@@ -39,7 +39,6 @@ func isPullRequestEvent(r *http.Request) bool {
 func hookKey(r *http.Request) (string, error) {
 	et := r.Header.Get(gitHubEventHeader)
 	dec := json.NewDecoder(r.Body)
-	dec.DisallowUnknownFields()
 	var event github.PullRequestEvent
 	err := dec.Decode(&event)
 	if err != nil {
