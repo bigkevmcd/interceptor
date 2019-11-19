@@ -1,0 +1,9 @@
+module github.com/bigkevmcd/interceptor
+
+go 1.13
+
+require (
+	github.com/google/go-github v17.0.0+incompatible
+	github.com/google/go-github/v28 v28.1.1
+	github.com/prometheus/common v0.7.0
+)
