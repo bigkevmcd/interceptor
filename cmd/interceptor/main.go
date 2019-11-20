@@ -6,7 +6,7 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/bigkevmcd/interceptor/pkg/interception/pullrequest"
+	"github.com/bigkevmcd/interceptor/pkg/interception"
 )
 
 var (
@@ -16,7 +16,7 @@ var (
 func main() {
 	flag.Parse()
 
-	http.HandleFunc("/", pullrequest.InterceptionHandler)
+	http.HandleFunc("/", interception.Handler)
 	addr := fmt.Sprintf(":%d", *port)
 	log.Printf("Listening on %s\n", addr)
 	log.Fatal(http.ListenAndServe(addr, nil))

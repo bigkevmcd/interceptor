@@ -1,11 +1,11 @@
 package pullrequest
 
 import (
-	"io/ioutil"
+	"fmt"
 	"net/http"
 )
 
-// InterceptionHandler is an http.HandlerFunc that checks that the GitHub request
+// Handler is an InterceptionFunc that checks that the GitHub request
 // body matches the requested fields.
 //
 // It recognises the following request headers:
@@ -14,25 +14,14 @@ import (
 //    Pullrequest-Repo - this is the full name of the GitHub repo e.g.
 //    tektoncd/triggers.
 //
-// If the request matches the configuration, the body is returned, otherwise the
-// an error status is returned, which causes the eventlistener not to process
-// the trigger.
-func InterceptionHandler(w http.ResponseWriter, r *http.Request) {
-	body, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		http.Error(w, "failed to read request body", http.StatusBadRequest)
-	}
-
+// If the request matches the configuration, the body is returned.
+func Handler(r *http.Request, body []byte) ([]byte, error) {
 	match, err := MatchPullRequestAction(r, body)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		return nil, fmt.Errorf("error matching pull request: %w", err)
 	}
 	if !match {
-		// This means that the event listener will not continue processing
-		// this trigger.
-		http.Error(w, "did not match", http.StatusPreconditionFailed)
+		return nil, nil
 	}
-	w.Header().Set("Content-Type", "application/json")
-	w.Write(body)
+	return body, nil
 }
