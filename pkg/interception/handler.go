@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/bigkevmcd/interceptor/pkg/interception/pullrequest"
+	"github.com/bigkevmcd/interceptor/pkg/interception/push"
 )
 
 const (
@@ -15,6 +16,7 @@ const (
 // eventHandlerMap is a mapping from GitHub hook events to handlers.
 var eventHandlerMap = map[string]InterceptionFunc{
 	"pull_request": pullrequest.Handler,
+	"push":         push.Handler,
 }
 
 // Handler processes interception requests.
