@@ -1,33 +1,33 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: interceptor
+  name: demo-interceptor
   namespace: default
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app.kubernetes.io/name: interceptor
+      app.kubernetes.io/name: demo-interceptor
   template:
     metadata:
      labels:
-       app.kubernetes.io/name: interceptor
+       app.kubernetes.io/name: demo-interceptor
     spec:
       serviceAccountName: default
       containers:
-        - name: interceptor
+        - name: demo-interceptor
           image: quay.io/kmcdermo/interceptor
           imagePullPolicy: Always
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: interceptor
+  name: demo-interceptor
   namespace: default
 spec:
   type: ClusterIP
   selector:
-    app.kubernetes.io/name: interceptor
+    app.kubernetes.io/name: demo-interceptor
   ports:
     - protocol: TCP
       port: 80

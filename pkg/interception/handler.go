@@ -3,6 +3,7 @@ package interception
 import (
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 
 	"github.com/bigkevmcd/interceptor/pkg/interception/pullrequest"
@@ -39,11 +40,13 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	h, ok := eventHandlerMap[eventType]
 
 	if !ok {
+		log.Printf("failed to handle event %s\n", eventType)
 		w.Header().Set("Content-Type", r.Header.Get("Content-Type"))
 		w.Write(body)
 		return
 	}
 
+	log.Printf("handling event %s\n", eventType)
 	newBody, err := h(r, body)
 	if err != nil {
 		msg := fmt.Sprintf("failed handling the event: %s", err.Error())
