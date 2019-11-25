@@ -28,9 +28,10 @@ func MatchPushAction(r *http.Request, event *github.PushEvent) (bool, error) {
 	}
 
 	hookKey := keyFromHook(r, event)
-	log.Printf("debug: hookKey = %s, requestKey = %s", hookKey, requestKey(r))
+	requestKey := keyFromRequest(r)
+	log.Printf("debug: hookKey = %s, keyFromRequest = %s", hookKey, requestKey)
 
-	return requestKey(r) == hookKey, nil
+	return keyFromRequest(r) == hookKey, nil
 }
 
 func isPushEvent(r *http.Request) bool {
@@ -49,7 +50,7 @@ func repoName(e *github.PushEvent) string {
 	return strValue(e.Repo.FullName)
 }
 
-func requestKey(r *http.Request) string {
+func keyFromRequest(r *http.Request) string {
 	et := r.Header.Get(gitHubEventHeader)
 	ref := r.Header.Get(pushRefHeader)
 	repo := r.Header.Get(pushRepoHeader)

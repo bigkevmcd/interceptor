@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"net/http"
+	"reflect"
 	"testing"
 
 	"github.com/google/go-github/v28/github"
@@ -43,6 +44,21 @@ func TestMatchPullRequestActionWithMatchingAction(t *testing.T) {
 	}
 }
 
+func TestMatchPullRequestActionWithMultipleActions(t *testing.T) {
+	event := makeHookBody("synchronize")
+
+	r, body := makeRequest(t, event, "pull_request", "open,synchronize")
+
+	matched, err := MatchPullRequestAction(r, body)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !matched {
+		t.Fatal("MatchPullRequestAction() got false, wanted true")
+	}
+}
+
 func TestMatchPullRequestActionWithDifferentAction(t *testing.T) {
 	event := makeHookBody("open")
 	r, body := makeRequest(t, event, "pull_request", "closed")
@@ -64,14 +80,13 @@ func TestMatchPullRequestActionInvalidJSON(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected json parsing error, got nil")
 	}
-
 }
 
-func TestHookKey(t *testing.T) {
+func TestExtractHookPullRequest(t *testing.T) {
 	keyTests := []struct {
 		event    string
 		hookBody interface{}
-		key      string
+		key      *pullRequest
 	}{
 		{
 			"pull_request", &github.PullRequestEvent{
@@ -79,25 +94,25 @@ func TestHookKey(t *testing.T) {
 				Repo: &github.Repository{
 					FullName: stringPtr(testFullname),
 				},
-			}, "pull_request:open:testing/testing",
+			}, &pullRequest{"pull_request", "open", "testing/testing"},
 		},
 		{
 			"public", &github.PublicEvent{
 				Repo: &github.Repository{
 					FullName: stringPtr(testFullname),
 				},
-			}, "public::testing/testing",
+			}, &pullRequest{"public", "", "testing/testing"},
 		},
 	}
 
 	for _, tt := range keyTests {
-		k, err := hookKey(makeRequest(t, tt.hookBody, tt.event, "open"))
+		k, err := extractHookPullRequest(makeRequest(t, tt.hookBody, tt.event, "open"))
 		if err != nil {
-			t.Errorf("hookKey() failed: %v for case %s", err, tt.key)
+			t.Errorf("hookKey() failed: %v for case %#v", err, tt.key)
 		}
 
-		if k != tt.key {
-			t.Errorf("hookKey() got %s, wanted %s", k, tt.key)
+		if !reflect.DeepEqual(k, tt.key) {
+			t.Errorf("hookKey() got %#v, wanted %#v", k, tt.key)
 		}
 	}
 }
@@ -107,11 +122,11 @@ func TestRequestKey(t *testing.T) {
 		eventType string
 		repo      string
 		action    string
-		key       string
+		pr        *pullRequest
 	}{
-		{"pull_request", "testing/test", "open", "pull_request:open:testing/test"},
-		{"pull_request", "testing/test", "close", "pull_request:close:testing/test"},
-		{"public", "testing/test", "open", "public:open:testing/test"},
+		{"pull_request", "testing/test", "open", &pullRequest{"pull_request", "open", "testing/test"}},
+		{"pull_request", "testing/test", "close", &pullRequest{"pull_request", "close", "testing/test"}},
+		{"public", "testing/test", "", nil},
 	}
 
 	for _, tt := range keyTests {
@@ -121,9 +136,9 @@ func TestRequestKey(t *testing.T) {
 		r.Header.Add(pullRequestRepoHeader, tt.repo)
 		r.Header.Add(pullRequestActionHeader, tt.action)
 
-		k := requestKey(r)
-		if k != tt.key {
-			t.Errorf("requestKey() got %s, wanted %s", k, tt.key)
+		pr := extractPullRequest(r)
+		if !reflect.DeepEqual(pr, tt.pr) {
+			t.Errorf("requestKey() got %#v wanted %#v", pr, tt.pr)
 		}
 	}
 }

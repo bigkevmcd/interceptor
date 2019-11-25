@@ -27,57 +27,43 @@ func TestMatchPushActionWithMatchingAction(t *testing.T) {
 	}
 }
 
-// func TestMatchPushActionWithUnmatchedBranch(t *testing.T) {
-// 	event := makeHookBody("refs/heads/my-branch")
-// 	r := makeRequest(t, event, "push", "master")
+func TestMatchPushActionWithUnmatchedBranch(t *testing.T) {
+	event := makeHookBody("refs/heads/my-branch")
+	r := makeRequest(t, event, "push", "master")
 
-// 	matched, err := MatchPushAction(r, event)
+	matched, err := MatchPushAction(r, event)
 
-// 	if err != nil {
-// 		t.Fatal(err)
-// 	}
-// 	if matched {
-// 		t.Fatalf("MatchPushAction() got true, wanted false")
-// 	}
-// }
+	if err != nil {
+		t.Fatal(err)
+	}
+	if matched {
+		t.Fatalf("MatchPushAction() got true, wanted false")
+	}
+}
 
-// func TestMatchPushActionInvalidJSON(t *testing.T) {
-// 	r, body := makeRequestWithBody([]byte(`{test`), "push", testFullname, "closed")
+func TestHookKey(t *testing.T) {
+	keyTests := []struct {
+		event    string
+		hookBody *github.PushEvent
+		key      string
+	}{
+		{
+			"push", &github.PushEvent{
+				Ref: stringPtr("refs/heads/my-branch"),
+				Repo: &github.PushEventRepository{
+					FullName: stringPtr(testFullname),
+				},
+			}, "push:testing/testing:my-branch",
+		},
+	}
 
-// 	_, err := MatchPushAction(r, body)
-// 	if err == nil {
-// 		t.Fatal("expected json parsing error, got nil")
-// 	}
-
-// }
-
-// func TestHookKey(t *testing.T) {
-// 	keyTests := []struct {
-// 		event    string
-// 		hookBody interface{}
-// 		key      string
-// 	}{
-// 		{
-// 			"push", &github.PushEvent{
-// 				Ref: stringPtr("refs/heads/my-branch"),
-// 				Repo: &github.PushEventRepository{
-// 					FullName: stringPtr(testFullname),
-// 				},
-// 			}, "push:testing/testing:my-branch",
-// 		},
-// 	}
-
-// 	for _, tt := range keyTests {
-// 		k, err := hookKey(makeRequest(t, tt.hookBody, tt.event, "open"))
-// 		if err != nil {
-// 			t.Errorf("hookKey() failed: %v for case %s", err, tt.key)
-// 		}
-
-// 		if k != tt.key {
-// 			t.Errorf("hookKey() got %s, wanted %s", k, tt.key)
-// 		}
-// 	}
-// }
+	for _, tt := range keyTests {
+		k := keyFromHook(makeRequest(t, tt.hookBody, tt.event, "open"), tt.hookBody)
+		if k != tt.key {
+			t.Errorf("hookKey() got %s, wanted %s", k, tt.key)
+		}
+	}
+}
 
 func TestRequestKey(t *testing.T) {
 	keyTests := []struct {
@@ -97,7 +83,7 @@ func TestRequestKey(t *testing.T) {
 		r.Header.Add(pushRepoHeader, tt.repo)
 		r.Header.Add(pushRefHeader, tt.ref)
 
-		k := requestKey(r)
+		k := keyFromRequest(r)
 		if k != tt.key {
 			t.Errorf("requestKey() got %s, wanted %s", k, tt.key)
 		}
