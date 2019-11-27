@@ -36,11 +36,27 @@ func Handler(r *http.Request, body []byte) ([]byte, error) {
 		return nil, nil
 	}
 
-	interceptedBranch := refToBranch(event.Ref)
-	updatedBody, err := sjson.SetBytes(body, "intercepted.ref", interceptedBranch)
-	if err != nil {
-		return nil, fmt.Errorf("error setting the ref: %w", err)
+	intercepted := map[string]interface{}{
+		"ref":         refToBranch(event.Ref),
+		"last_commit": secondLastCommit(&event),
 	}
-
+	updatedBody, err := sjson.SetBytes(body, "intercepted", intercepted)
+	if err != nil {
+		return nil, fmt.Errorf("error setting the intercepted values: %w", err)
+	}
 	return updatedBody, nil
+}
+
+func secondLastCommit(evt *github.PushEvent) string {
+	if n := len(evt.Commits); n > 0 {
+		return strValue(evt.Commits[max(0, n-2)].ID)
+	}
+	return ""
+}
+
+func max(x, y int) int {
+	if x > y {
+		return x
+	}
+	return y
 }
