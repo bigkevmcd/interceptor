@@ -16,9 +16,8 @@ func TestHandleWithSuccess(t *testing.T) {
 		Repo: &github.PushEventRepository{
 			FullName: stringPtr("testing/testing"),
 		},
-		Commits: []github.PushEventCommit{
-			{ID: stringPtr("abc123")},
-			{ID: stringPtr("cde23456")},
+		HeadCommit: &github.PushEventCommit{
+			ID: stringPtr("abc123456789"),
 		},
 	}
 	r := makeRequest(t, event, "push", "master")
@@ -33,9 +32,9 @@ func TestHandleWithSuccess(t *testing.T) {
 	if interceptedRef.Value() != "master" {
 		t.Errorf("intercepted.ref got %s, wanted %s", interceptedRef, "master")
 	}
-	interceptedCommit := gjson.GetBytes(newBody, "intercepted.last_commit")
-	if interceptedCommit.Value() != "abc123" {
-		t.Errorf("intercepted.commit got %s, wanted %s", interceptedCommit, "abc123")
+	shortSHA := gjson.GetBytes(newBody, "intercepted.short_sha")
+	if shortSHA.Value() != "abc123" {
+		t.Errorf("intercepted.commit got %s, wanted %s", shortSHA, "abc123")
 	}
 
 	// Delete the addition to simplify the return comparison.
@@ -49,43 +48,13 @@ func TestHandleWithSuccess(t *testing.T) {
 
 }
 
-func TestExtractSecondLastCommit(t *testing.T) {
-	commitID := "abc12345"
-	commitTests := []struct {
-		commits   []github.PushEventCommit
-		extracted string
-	}{
-		{
-			[]github.PushEventCommit{
-				{ID: stringPtr(commitID)},
-				{ID: stringPtr("cde23456")},
-			},
-			commitID,
-		},
-		{
-			[]github.PushEventCommit{
-				{ID: stringPtr(commitID)},
-			},
-			commitID,
-		},
+func TestShortSHA(t *testing.T) {
+	commitID := "6a6bcddc365ca3a38c9055a603c9590a7fae7ca6"
+
+	wanted := "6a6bcd"
+	if s := shortSHA(stringPtr(commitID)); s != wanted {
+		t.Fatalf("shortSHA got %s, wanted %s", s, wanted)
 	}
-
-	for _, tt := range commitTests {
-		event := &github.PushEvent{
-			Ref: stringPtr("refs/heads/master"),
-			Repo: &github.PushEventRepository{
-				FullName: stringPtr("testing/testing"),
-			},
-			Commits: tt.commits,
-		}
-
-		result := secondLastCommit(event)
-
-		if result != tt.extracted {
-			t.Errorf("secondLastCommit got %s, wanted %s", result, tt.extracted)
-		}
-	}
-
 }
 
 func mustMarshal(t *testing.T, e interface{}) []byte {

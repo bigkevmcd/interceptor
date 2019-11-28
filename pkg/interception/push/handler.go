@@ -37,8 +37,8 @@ func Handler(r *http.Request, body []byte) ([]byte, error) {
 	}
 
 	intercepted := map[string]interface{}{
-		"ref":         refToBranch(event.Ref),
-		"last_commit": secondLastCommit(&event),
+		"ref":       refToBranch(event.Ref),
+		"short_sha": shortSHA(event.HeadCommit.ID),
 	}
 	updatedBody, err := sjson.SetBytes(body, "intercepted", intercepted)
 	if err != nil {
@@ -47,11 +47,8 @@ func Handler(r *http.Request, body []byte) ([]byte, error) {
 	return updatedBody, nil
 }
 
-func secondLastCommit(evt *github.PushEvent) string {
-	if n := len(evt.Commits); n > 0 {
-		return strValue(evt.Commits[max(0, n-2)].ID)
-	}
-	return ""
+func shortSHA(s *string) string {
+	return strValue(s)[:6]
 }
 
 func max(x, y int) int {
