@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/bigkevmcd/interceptor/pkg/git"
 	"github.com/google/go-github/v28/github"
 	"github.com/tidwall/sjson"
 )
@@ -38,17 +39,13 @@ func Handler(r *http.Request, body []byte) ([]byte, error) {
 
 	intercepted := map[string]interface{}{
 		"ref":       refToBranch(event.Ref),
-		"short_sha": shortSHA(event.HeadCommit.ID),
+		"short_sha": git.ShortenSHA(strValue(event.HeadCommit.ID)),
 	}
 	updatedBody, err := sjson.SetBytes(body, "intercepted", intercepted)
 	if err != nil {
 		return nil, fmt.Errorf("error setting the intercepted values: %w", err)
 	}
 	return updatedBody, nil
-}
-
-func shortSHA(s *string) string {
-	return strValue(s)[:6]
 }
 
 func max(x, y int) int {

@@ -48,15 +48,6 @@ func TestHandleWithSuccess(t *testing.T) {
 
 }
 
-func TestShortSHA(t *testing.T) {
-	commitID := "6a6bcddc365ca3a38c9055a603c9590a7fae7ca6"
-
-	wanted := "6a6bcd"
-	if s := shortSHA(stringPtr(commitID)); s != wanted {
-		t.Fatalf("shortSHA got %s, wanted %s", s, wanted)
-	}
-}
-
 func mustMarshal(t *testing.T, e interface{}) []byte {
 	body, err := json.Marshal(e)
 	if err != nil {
