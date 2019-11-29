@@ -90,16 +90,16 @@ func TestExtractHookPullRequest(t *testing.T) {
 	}{
 		{
 			"pull_request", &github.PullRequestEvent{
-				Action: stringPtr("open"),
+				Action: github.String("open"),
 				Repo: &github.Repository{
-					FullName: stringPtr(testFullname),
+					FullName: github.String(testFullname),
 				},
 			}, &pullRequest{"pull_request", "open", "testing/testing"},
 		},
 		{
 			"public", &github.PublicEvent{
 				Repo: &github.Repository{
-					FullName: stringPtr(testFullname),
+					FullName: github.String(testFullname),
 				},
 			}, &pullRequest{"public", "", "testing/testing"},
 		},
@@ -145,9 +145,9 @@ func TestRequestKey(t *testing.T) {
 
 func makeHookBody(action string) *github.PullRequestEvent {
 	event := &github.PullRequestEvent{
-		Action: stringPtr(action),
+		Action: github.String(action),
 		Repo: &github.Repository{
-			FullName: stringPtr(testFullname),
+			FullName: github.String(testFullname),
 		},
 	}
 
@@ -169,8 +169,4 @@ func makeRequestWithBody(body []byte, eventType, repo, action string) (*http.Req
 	r.Header.Add(pullRequestActionHeader, action)
 	r.Header.Add(pullRequestRepoHeader, repo)
 	return r, body
-}
-
-func stringPtr(s string) *string {
-	return &s
 }

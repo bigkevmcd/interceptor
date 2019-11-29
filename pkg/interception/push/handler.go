@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/bigkevmcd/interceptor/pkg/git"
 	"github.com/google/go-github/v28/github"
 	"github.com/tidwall/sjson"
+
+	"github.com/bigkevmcd/interceptor/pkg/git"
 )
 
 // Handler is an InterceptionFunc that checks that the GitHub request

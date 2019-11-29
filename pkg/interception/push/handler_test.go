@@ -12,12 +12,12 @@ import (
 
 func TestHandleWithSuccess(t *testing.T) {
 	event := &github.PushEvent{
-		Ref: stringPtr("refs/heads/master"),
+		Ref: github.String("refs/heads/master"),
 		Repo: &github.PushEventRepository{
-			FullName: stringPtr("testing/testing"),
+			FullName: github.String("testing/testing"),
 		},
 		HeadCommit: &github.PushEventCommit{
-			ID: stringPtr("abc123456789"),
+			ID: github.String("abc123456789"),
 		},
 	}
 	r := makeRequest(t, event, "push", "master")

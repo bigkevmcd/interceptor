@@ -11,13 +11,13 @@ import (
 
 func TestHandleWithSuccess(t *testing.T) {
 	event := &github.PullRequestEvent{
-		Action: stringPtr("open"),
+		Action: github.String("open"),
 		Repo: &github.Repository{
-			FullName: stringPtr("testing/testing"),
+			FullName: github.String("testing/testing"),
 		},
 		PullRequest: &github.PullRequest{
 			Head: &github.PullRequestBranch{
-				SHA: stringPtr("abc1234567"),
+				SHA: github.String("abc1234567"),
 			},
 		},
 	}

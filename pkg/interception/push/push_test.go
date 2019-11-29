@@ -49,9 +49,9 @@ func TestHookKey(t *testing.T) {
 	}{
 		{
 			"push", &github.PushEvent{
-				Ref: stringPtr("refs/heads/my-branch"),
+				Ref: github.String("refs/heads/my-branch"),
 				Repo: &github.PushEventRepository{
-					FullName: stringPtr(testFullname),
+					FullName: github.String(testFullname),
 				},
 			}, "push:testing/testing:my-branch",
 		},
@@ -100,7 +100,7 @@ func TestRefToBranch(t *testing.T) {
 	}
 
 	for _, tt := range refTests {
-		if b := refToBranch(stringPtr(tt.ref)); b != tt.branch {
+		if b := refToBranch(github.String(tt.ref)); b != tt.branch {
 			t.Errorf("refToBranch(%s) got %s, wanted %s", tt.ref, b, tt.branch)
 		}
 	}
@@ -108,9 +108,9 @@ func TestRefToBranch(t *testing.T) {
 
 func makeHookBody(ref string) *github.PushEvent {
 	return &github.PushEvent{
-		Ref: stringPtr(ref),
+		Ref: github.String(ref),
 		Repo: &github.PushEventRepository{
-			FullName: stringPtr(testFullname),
+			FullName: github.String(testFullname),
 		},
 	}
 }
@@ -130,8 +130,4 @@ func makeRequestWithBody(body []byte, eventType, repo, ref string) *http.Request
 	r.Header.Add(pushRefHeader, ref)
 	r.Header.Add(pushRepoHeader, repo)
 	return r
-}
-
-func stringPtr(s string) *string {
-	return &s
 }
