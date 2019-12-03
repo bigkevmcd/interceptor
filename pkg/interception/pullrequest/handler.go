@@ -38,6 +38,7 @@ func Handler(r *http.Request, body []byte) ([]byte, error) {
 
 	intercepted := map[string]interface{}{
 		"short_sha": git.ShortenSHA(strValue(event.PullRequest.Head.SHA)),
+		"fullname":  event.Repo.FullName,
 	}
 	body, err = sjson.SetBytes(body, "intercepted", intercepted)
 	if err != nil {

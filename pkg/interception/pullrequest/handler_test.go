@@ -10,10 +10,11 @@ import (
 )
 
 func TestHandleWithSuccess(t *testing.T) {
+	repoName := "testing/testing"
 	event := &github.PullRequestEvent{
 		Action: github.String("open"),
 		Repo: &github.Repository{
-			FullName: github.String("testing/testing"),
+			FullName: github.String(repoName),
 		},
 		PullRequest: &github.PullRequest{
 			Head: &github.PullRequestBranch{
@@ -32,6 +33,10 @@ func TestHandleWithSuccess(t *testing.T) {
 	shortSHA := gjson.GetBytes(newBody, "intercepted.short_sha")
 	if shortSHA.Value() != "abc123" {
 		t.Errorf("intercepted.commit got %s, wanted %s", shortSHA, "abc123")
+	}
+	fullName := gjson.GetBytes(newBody, "intercepted.fullname")
+	if fullName.Value() != repoName {
+		t.Errorf("intercepted.fullname got %s, wanted %s", fullName, repoName)
 	}
 
 	// Delete the addition to simplify the return comparison.
