@@ -20,6 +20,9 @@ import (
 //    Push-Repo - this is the full name of the GitHub repo e.g.
 //    tektoncd/triggers.
 //
+// If a Push-Repo is provided, and no Push-Ref, then this will match on _all_
+// pushes from the Repo.
+//
 // If the request matches the configuration, the body is returned, with an
 // additional key added to the body: "intercepted.ref" which will be ths
 // shortened version of the ref extracting just the last part (the branch).

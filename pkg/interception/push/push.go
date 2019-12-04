@@ -1,7 +1,6 @@
 package push
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 	"regexp"
@@ -27,20 +26,31 @@ func MatchPushAction(r *http.Request, event *github.PushEvent) (bool, error) {
 		return false, nil
 	}
 
-	hookKey := keyFromHook(r, event)
-	requestKey := keyFromRequest(r)
-	log.Printf("debug: hookKey = %s, keyFromRequest = %s", hookKey, requestKey)
+	hookPush := pushFromHook(r, event)
+	requestPush := pushFromRequest(r)
+	log.Printf("debug: hookPush = %v, requestPush = %s", hookPush, requestPush)
 
-	return keyFromRequest(r) == hookKey, nil
+	return requestMatchesHook(requestPush, hookPush), nil
 }
 
 func isPushEvent(r *http.Request) bool {
 	return r.Header.Get(gitHubEventHeader) == pushEventType
 }
 
-func keyFromHook(r *http.Request, event *github.PushEvent) string {
-	et := r.Header.Get(gitHubEventHeader)
-	return fmt.Sprintf("%s:%s:%s", et, repoName(event), refToBranch(event.Ref))
+type push struct {
+	repoName string
+	ref      string
+}
+
+func pushFromHook(r *http.Request, event *github.PushEvent) *push {
+	return &push{repoName: repoName(event), ref: refToBranch(event.Ref)}
+}
+
+func pushFromRequest(r *http.Request) *push {
+	ref := r.Header.Get(pushRefHeader)
+	repo := r.Header.Get(pushRepoHeader)
+
+	return &push{repoName: repo, ref: ref}
 }
 
 func repoName(e *github.PushEvent) string {
@@ -48,14 +58,6 @@ func repoName(e *github.PushEvent) string {
 		return ""
 	}
 	return strValue(e.Repo.FullName)
-}
-
-func keyFromRequest(r *http.Request) string {
-	et := r.Header.Get(gitHubEventHeader)
-	ref := r.Header.Get(pushRefHeader)
-	repo := r.Header.Get(pushRepoHeader)
-
-	return fmt.Sprintf("%s:%s:%s", et, repo, ref)
 }
 
 func strValue(s *string) string {
@@ -67,4 +69,23 @@ func strValue(s *string) string {
 
 func refToBranch(s *string) string {
 	return branchRE.ReplaceAllString(strValue(s), "")
+}
+
+func (p push) Equal(o push) bool {
+	return p.repoName == o.repoName && p.ref == o.ref
+}
+
+// If the request (from the headers) push matches the hook push (in the body)
+// then this is true.
+//
+// If the requested branch is empty, then return true if the repoName matches.
+// This allows for matching on _all_ branches in a repo.
+func requestMatchesHook(reqPush, hookPush *push) bool {
+	if reqPush.Equal(*hookPush) {
+		return true
+	}
+	if reqPush.ref == "" {
+		return reqPush.repoName == hookPush.repoName
+	}
+	return false
 }

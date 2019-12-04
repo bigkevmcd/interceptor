@@ -45,7 +45,7 @@ func TestHookKey(t *testing.T) {
 	keyTests := []struct {
 		event    string
 		hookBody *github.PushEvent
-		key      string
+		p        push
 	}{
 		{
 			"push", &github.PushEvent{
@@ -53,14 +53,14 @@ func TestHookKey(t *testing.T) {
 				Repo: &github.PushEventRepository{
 					FullName: github.String(testFullname),
 				},
-			}, "push:testing/testing:my-branch",
+			}, push{"testing/testing", "my-branch"},
 		},
 	}
 
 	for _, tt := range keyTests {
-		k := keyFromHook(makeRequest(t, tt.hookBody, tt.event, "open"), tt.hookBody)
-		if k != tt.key {
-			t.Errorf("hookKey() got %s, wanted %s", k, tt.key)
+		k := pushFromHook(makeRequest(t, tt.hookBody, tt.event, "open"), tt.hookBody)
+		if !k.Equal(tt.p) {
+			t.Errorf("pushFromHook() got %v, wanted %v", k, tt.p)
 		}
 	}
 }
@@ -70,10 +70,10 @@ func TestRequestKey(t *testing.T) {
 		eventType string
 		repo      string
 		ref       string
-		key       string
+		p         push
 	}{
-		{"push", "testing/test", "master", "push:testing/test:master"},
-		{"push", "testing/project", "my-branch", "push:testing/project:my-branch"},
+		{"push", "testing/test", "master", push{"testing/test", "master"}},
+		{"push", "testing/project", "my-branch", push{"testing/project", "my-branch"}},
 	}
 
 	for _, tt := range keyTests {
@@ -83,9 +83,9 @@ func TestRequestKey(t *testing.T) {
 		r.Header.Add(pushRepoHeader, tt.repo)
 		r.Header.Add(pushRefHeader, tt.ref)
 
-		k := keyFromRequest(r)
-		if k != tt.key {
-			t.Errorf("requestKey() got %s, wanted %s", k, tt.key)
+		k := pushFromRequest(r)
+		if !k.Equal(tt.p) {
+			t.Errorf("pushFromRequest() got %v, wanted %v", k, tt.p)
 		}
 	}
 }
