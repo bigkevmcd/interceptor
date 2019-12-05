@@ -9,10 +9,11 @@ import (
 )
 
 const (
-	gitHubEventHeader = "X-Github-Event"
-	pushEventType     = "push"
-	pushRefHeader     = "Push-Ref"
-	pushRepoHeader    = "Push-Repo"
+	gitHubEventHeader    = "X-Github-Event"
+	pushEventType        = "push"
+	pushRefHeader        = "Push-Ref"
+	pushExcludeRefHeader = "PushExclude-Ref"
+	pushRepoHeader       = "Push-Repo"
 )
 
 var branchRE = regexp.MustCompile("^refs/heads/")
@@ -37,9 +38,13 @@ func isPushEvent(r *http.Request) bool {
 	return r.Header.Get(gitHubEventHeader) == pushEventType
 }
 
+// exclude is only set from incoming request headers in the pushFromRequest
+// function, it's used to indicate a branch that should _not_ be allowed to
+// match.
 type push struct {
 	repoName string
 	ref      string
+	exclude  string
 }
 
 func pushFromHook(r *http.Request, event *github.PushEvent) *push {
@@ -48,9 +53,10 @@ func pushFromHook(r *http.Request, event *github.PushEvent) *push {
 
 func pushFromRequest(r *http.Request) *push {
 	ref := r.Header.Get(pushRefHeader)
+	exclude := r.Header.Get(pushExcludeRefHeader)
 	repo := r.Header.Get(pushRepoHeader)
 
-	return &push{repoName: repo, ref: ref}
+	return &push{repoName: repo, ref: ref, exclude: exclude}
 }
 
 func repoName(e *github.PushEvent) string {
@@ -72,7 +78,9 @@ func refToBranch(s *string) string {
 }
 
 func (p push) Equal(o push) bool {
-	return p.repoName == o.repoName && p.ref == o.ref
+	return p.repoName == o.repoName &&
+		p.ref == o.ref &&
+		p.exclude == o.exclude
 }
 
 // If the request (from the headers) push matches the hook push (in the body)
@@ -84,8 +92,11 @@ func requestMatchesHook(reqPush, hookPush *push) bool {
 	if reqPush.Equal(*hookPush) {
 		return true
 	}
-	if reqPush.ref == "" {
+	if reqPush.ref == "" && reqPush.exclude == "" {
 		return reqPush.repoName == hookPush.repoName
+	}
+	if reqPush.ref == "" && reqPush.exclude != hookPush.ref {
+		return true
 	}
 	return false
 }

@@ -17,14 +17,19 @@ import (
 // It recognises the following request headers:
 //    X-GitHub-Event - this is provided by GitHub in its hook-mechanism
 //    Push-Ref - this is configured on the trigger interceptor
+//    PushExclude-Ref - this is configured on the trigger interceptor
 //    Push-Repo - this is the full name of the GitHub repo e.g.
 //    tektoncd/triggers.
 //
 // If a Push-Repo is provided, and no Push-Ref, then this will match on _all_
 // pushes from the Repo.
 //
+// If a Push-Repo is provided, and no Push-Ref, but a PushExclude-Ref is
+// provided, then the interceptor will match only if the hook's ref does not
+// match the excluded ref.
+//
 // If the request matches the configuration, the body is returned, with an
-// additional key added to the body: "intercepted.ref" which will be ths
+// additional key added to the body: "intercepted.ref" which will be the
 // shortened version of the ref extracting just the last part (the branch).
 func Handler(r *http.Request, body []byte) ([]byte, error) {
 	var event github.PushEvent

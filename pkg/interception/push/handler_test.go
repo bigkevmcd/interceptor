@@ -22,7 +22,7 @@ func TestHandleWithSuccess(t *testing.T) {
 			ID: github.String("abc123456789"),
 		},
 	}
-	r := makeRequest(t, event, "push", "master")
+	r := makeRequest(t, event, "push", "master", "")
 	body := mustMarshal(t, event)
 	newBody, err := Handler(r, body)
 
