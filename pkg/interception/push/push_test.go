@@ -15,7 +15,7 @@ const (
 
 func TestMatchPushActionWithMatchingAction(t *testing.T) {
 	event := makeHookBody("refs/heads/master")
-	r := makeRequest(t, event, "push", "master")
+	r := makeRequest(t, event, "push", "master", "")
 
 	matched, err := MatchPushAction(r, event)
 
@@ -27,9 +27,23 @@ func TestMatchPushActionWithMatchingAction(t *testing.T) {
 	}
 }
 
+func TestMatchPushActionWithNoHeaderAndExcludedRef(t *testing.T) {
+	event := makeHookBody("refs/heads/master")
+	r := makeRequest(t, event, "push", "", "master")
+
+	matched, err := MatchPushAction(r, event)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+	if matched {
+		t.Fatal("MatchPushAction() got true, wanted false")
+	}
+}
+
 func TestMatchPushActionWithUnmatchedBranch(t *testing.T) {
 	event := makeHookBody("refs/heads/my-branch")
-	r := makeRequest(t, event, "push", "master")
+	r := makeRequest(t, event, "push", "master", "")
 
 	matched, err := MatchPushAction(r, event)
 
@@ -41,7 +55,7 @@ func TestMatchPushActionWithUnmatchedBranch(t *testing.T) {
 	}
 }
 
-func TestHookKey(t *testing.T) {
+func TestPushFromHook(t *testing.T) {
 	keyTests := []struct {
 		event    string
 		hookBody *github.PushEvent
@@ -53,27 +67,29 @@ func TestHookKey(t *testing.T) {
 				Repo: &github.PushEventRepository{
 					FullName: github.String(testFullname),
 				},
-			}, push{"testing/testing", "my-branch"},
+			}, push{"testing/testing", "my-branch", ""},
 		},
 	}
 
 	for _, tt := range keyTests {
-		k := pushFromHook(makeRequest(t, tt.hookBody, tt.event, "open"), tt.hookBody)
+		k := pushFromHook(makeRequest(t, tt.hookBody, tt.event, "open", ""), tt.hookBody)
 		if !k.Equal(tt.p) {
 			t.Errorf("pushFromHook() got %v, wanted %v", k, tt.p)
 		}
 	}
 }
 
-func TestRequestKey(t *testing.T) {
+func TestPushFromRequest(t *testing.T) {
 	keyTests := []struct {
 		eventType string
 		repo      string
 		ref       string
+		exclude   string
 		p         push
 	}{
-		{"push", "testing/test", "master", push{"testing/test", "master"}},
-		{"push", "testing/project", "my-branch", push{"testing/project", "my-branch"}},
+		{"push", "test/test", "master", "", push{"test/test", "master", ""}},
+		{"push", "test/project", "branch1", "", push{"test/project", "branch1", ""}},
+		{"push", "test/project", "branch1", "exclude", push{"test/project", "branch1", "exclude"}},
 	}
 
 	for _, tt := range keyTests {
@@ -82,6 +98,7 @@ func TestRequestKey(t *testing.T) {
 		r.Header.Add(gitHubEventHeader, tt.eventType)
 		r.Header.Add(pushRepoHeader, tt.repo)
 		r.Header.Add(pushRefHeader, tt.ref)
+		r.Header.Add(pushExcludeRefHeader, tt.exclude)
 
 		k := pushFromRequest(r)
 		if !k.Equal(tt.p) {
@@ -115,19 +132,25 @@ func makeHookBody(ref string) *github.PushEvent {
 	}
 }
 
-func makeRequest(t *testing.T, event interface{}, eventType, ref string) *http.Request {
+func makeRequest(t *testing.T, event interface{}, eventType, ref, exclude string) *http.Request {
 	body, err := json.Marshal(event)
 	if err != nil {
 		t.Fatal(err)
 	}
-	return makeRequestWithBody(body, eventType, testFullname, ref)
+	return makeRequestWithBody(body, eventType, testFullname, ref, exclude)
 }
 
-func makeRequestWithBody(body []byte, eventType, repo, ref string) *http.Request {
+func makeRequestWithBody(body []byte, eventType, repo, ref, exclude string) *http.Request {
 	r, _ := http.NewRequest("POST", "/", bytes.NewReader(body))
 	r.Header.Add("Content-Type", "application/json")
 	r.Header.Add(gitHubEventHeader, eventType)
-	r.Header.Add(pushRefHeader, ref)
+
+	if ref != "" {
+		r.Header.Add(pushRefHeader, ref)
+	}
+	if exclude != "" {
+		r.Header.Add(pushExcludeRefHeader, exclude)
+	}
 	r.Header.Add(pushRepoHeader, repo)
 	return r
 }
